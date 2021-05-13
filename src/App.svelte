@@ -1,4 +1,5 @@
 <script>
+    import {onMount} from 'svelte';
     import meetups from './Meetups/meetups-store.js';
     import Header from "./UI/Header.svelte";
     import MeetupGrid from "./Meetups/MeetupGrid.svelte";
@@ -6,8 +7,7 @@
     import TextInput from "./UI/TextInput.svelte";
     import Button from "./UI/Button.svelte";
     import EditMeetup from "./Meetups/EditMeetup.svelte";
-
-    // let meetups = ;
+    import LoadingSpinner from './UI/LoadingSpinner.svelte';
 
     let loadedMeetups = meetups;
 
@@ -15,6 +15,11 @@
     let editedId = null;
     let page = 'overview';
     let pageData = {};
+    let fetchLoading = true;
+
+    onMount(() => {
+        meetups.fetch().then(() => setTimeout(() => fetchLoading = false, 1000));
+    });
 
     function stopEdit() {
         editMode = null;
@@ -27,13 +32,13 @@
     }
 
     function hideDetails() {
-      page = 'overview';
-      pageData = {};
+        page = 'overview';
+        pageData = {};
     }
 
     function startEdit(event) {
-      editMode = 'edit';
-      editedId = event.detail;
+        editMode = 'edit';
+        editedId = event.detail;
     }
 </script>
 
@@ -48,10 +53,15 @@
 <main>
     {#if page === 'overview'}
         {#if editMode === 'edit'}
-            <EditMeetup id="{editedId}" on:save="{stopEdit}" on:cancel="{stopEdit}" />
+            <EditMeetup id="{editedId}" on:save="{stopEdit}" on:cancel="{stopEdit}"/>
         {/if}
-        <MeetupGrid meetups="{$meetups}" on:showdetails="{showDetails}" on:add="{() => editMode = 'edit'}" on:edit="{startEdit}" />
+        {#if fetchLoading}
+            <LoadingSpinner />
+        {:else}
+            <MeetupGrid meetups="{$meetups}" on:showdetails="{showDetails}" on:add="{() => editMode = 'edit'}"
+                        on:edit="{startEdit}"/>
+        {/if}
     {:else}
-    <MeetupDetail id="{pageData.id}" on:close="{hideDetails}" />
+        <MeetupDetail id="{pageData.id}" on:close="{hideDetails}"/>
     {/if}
 </main>

@@ -1,54 +1,49 @@
 import {writable} from 'svelte/store';
+import axios from 'axios';
 
-const meetups = writable([
-    {
-        id: 'm1',
-        title: 'Coding Bootcamp',
-        subtitle: 'Learn to code in 2 hours',
-        description:
-            'In this meetup, we will have some experts that teach you how to code!',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Caffe_Nero_coffee_bar%2C_High_St%2C_Sutton%2C_Surrey%2C_Greater_London.JPG/800px-Caffe_Nero_coffee_bar%2C_High_St%2C_Sutton%2C_Surrey%2C_Greater_London.JPG',
-        address: '27th Nerd Road, 32523 New York',
-        contactEmail: 'code@test.com',
-        isFavorite: false
-    },
-    {
-        id: 'm2',
-        title: 'Swim Together',
-        subtitle: "Let's go for some swimming",
-        description: 'We will simply swim some rounds!',
-        imageUrl:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Olympic_swimming_pool_%28Tbilisi%29.jpg/800px-Olympic_swimming_pool_%28Tbilisi%29.jpg',
-        address: '27th Nerd Road, 32523 New York',
-        contactEmail: 'swim@test.com',
-        isFavorite: false
-    }
-]);
+const meetups = writable([]);
 
 const customMeetupsStore = {
     subscribe: meetups.subscribe,
+    fetch: () => {
+        return axios.get('https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups.json')
+            .then(response => {
+                if (response.statusText !== 'OK') {
+                    throw new Error('Failed to add meetup.');
+                }
+
+                const keys = Object.keys(response.data);
+                const values = Object.values(response.data);
+
+                values.forEach((value, index, array) => {
+                    array[index].id = keys[index];
+                });
+
+                meetups.set(values);
+            })
+            .catch(error => console.log);
+    },
     addMeetup: (meetupData) => {
         const newMeetup = {
             ...meetupData,
-            id: Math.random().toString(),
             isFavorite: false
         };
+        axios.post('https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups.json', newMeetup)
+            .then(response => {
+                if (response.statusText !== 'OK') {
+                    throw new Error('Failed to add meetup.');
+                }
 
-        meetups.update(items => {
-            return [newMeetup, ...items];
-        });
+                newMeetup.id = data.name;
+
+                meetups.update(items => {
+                    return [newMeetup, ...items];
+                });
+             })
+            .catch(error => console.log);
     },
     updateMeetup: (id, meetupData) => {
         meetups.update(items => {
-            /*
-            const meetupIndex = items.findIndex(i => i.id === id);
-            const updatedMeetup = { ...meetups[meetupIndex], meetupData };
-            const updatedMeetups = [...items];
-            updatedMeetups[meetupIndex] = updatedMeetup;
-            return updatedMeetups;
-             */
-
             const meetupIndex = items.findIndex(i => i.id === id);
 
             return Object.values({...items, [meetupIndex]: ({...items[meetupIndex], ...meetupData})});
