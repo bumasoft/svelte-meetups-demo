@@ -9,8 +9,6 @@
     import EditMeetup from "./Meetups/EditMeetup.svelte";
     import LoadingSpinner from './UI/LoadingSpinner.svelte';
 
-    let loadedMeetups = meetups;
-
     let editMode;
     let editedId = null;
     let page = 'overview';
@@ -18,7 +16,9 @@
     let fetchLoading = true;
 
     onMount(() => {
-        meetups.fetch().then(() => setTimeout(() => fetchLoading = false, 1000));
+        meetups.fetch().then(() => {
+            setTimeout(() => fetchLoading = false, 1000);
+        })
     });
 
     function stopEdit() {

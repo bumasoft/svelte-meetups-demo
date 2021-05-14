@@ -19,7 +19,7 @@ const customMeetupsStore = {
                     array[index].id = keys[index];
                 });
 
-                meetups.set(values);
+                meetups.set(values.reverse());
             })
             .catch(error => console.log);
     },
@@ -28,11 +28,13 @@ const customMeetupsStore = {
             ...meetupData,
             isFavorite: false
         };
-        axios.post('https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups.json', newMeetup)
+        return axios.post('https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups.json', newMeetup)
             .then(response => {
                 if (response.statusText !== 'OK') {
                     throw new Error('Failed to add meetup.');
                 }
+
+                const { data } = response;
 
                 newMeetup.id = data.name;
 
@@ -43,24 +45,50 @@ const customMeetupsStore = {
             .catch(error => console.log);
     },
     updateMeetup: (id, meetupData) => {
-        meetups.update(items => {
-            const meetupIndex = items.findIndex(i => i.id === id);
+        return axios.patch(`https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups/${id}.json`, meetupData)
+            .then(response => {
+                if (response.statusText !== 'OK') {
+                    throw new Error('Failed to update meetup.');
+                }
 
-            return Object.values({...items, [meetupIndex]: ({...items[meetupIndex], ...meetupData})});
-        });
+                meetups.update(items => {
+                    const meetupIndex = items.findIndex(i => i.id === id);
+                    const item = items[meetupIndex];
+
+                    return Object.values({...items, [meetupIndex]: ({...item, ...meetupData})});
+                });
+            })
+            .catch(error => console.log);
     },
     deleteMeetup: id => {
-        meetups.update( items => items.filter(i => i.id !== id));
-    },
-    toggleFavorite: (id) => {
-        meetups.update(items => {
-            const meetupIndex = items.findIndex(i => i.id === id);
+        return axios.delete(`https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups/${id}.json`)
+            .then(response => {
+                if (response.statusText !== 'OK') {
+                    throw new Error('Failed to delete meetup.');
+                }
 
-            return Object.values({
-                ...items,
-                [meetupIndex]: ({...items[meetupIndex], isFavorite: !items[meetupIndex].isFavorite})
-            });
-        });
+                meetups.update( items => items.filter(i => i.id !== id));
+            })
+            .catch(error => console.log);
+    },
+    toggleFavorite: (id, isFav) => {
+        return axios.patch(`https://svelte-meetups-c1074-default-rtdb.firebaseio.com/meetups/${id}.json`, {isFavorite: isFav})
+            .then(response => {
+                if (response.statusText !== 'OK') {
+                    throw new Error('Failed to toggle favorite.');
+                }
+
+                meetups.update(items => {
+                    const meetupIndex = items.findIndex(i => i.id === id);
+                    const item = items[meetupIndex];
+
+                    return Object.values({
+                        ...items,
+                        [meetupIndex]: ({...item, isFavorite: isFav})
+                    });
+                });
+            })
+            .catch(error => console.log);
     },
 };
 

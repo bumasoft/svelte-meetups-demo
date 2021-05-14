@@ -1,5 +1,5 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+    import {createEventDispatcher} from 'svelte';
     import meetups from './meetups-store';
     import Button from "../UI/Button.svelte";
     import Badge from "../UI/Badge.svelte";
@@ -13,10 +13,21 @@
     export let email;
     export let isFav;
 
+    let isLoading = false;
+
     let dispatch = createEventDispatcher();
 
     function toggleFavorite() {
-        meetups.toggleFavorite(id);
+        const unsubscribe = meetups.subscribe(items => {
+            const item = items.find(i => i.id === id);
+
+            isLoading = true;
+            meetups.toggleFavorite(id, !item.isFavorite).then(response => {
+                isLoading = false;
+            });
+        });
+
+        unsubscribe();
     }
 </script>
 
@@ -98,6 +109,7 @@
     <footer>
         <Button mode="outline" type="button" on:click="{() => dispatch('edit', id)}">Edit</Button>
         <Button
+                disabled={isLoading}
                 mode="outline"
                 color={isFav ? null : 'success'}
                 type="button"
